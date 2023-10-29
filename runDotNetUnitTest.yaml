@@ -1,0 +1,51 @@
+parameters:
+- name: dotNetTestProjectFilePath
+  type: string
+
+- name: buildConfiguration
+  type: string
+  default: '$(buildConfiguration)'
+
+- name: publishTestResults
+  type: string
+  default: True
+
+- name: testRunTitle
+  type: string
+  default: ''
+
+- name: workingDirectory
+  type: string
+  default: '.'
+
+- name: logger
+  type: string
+  default: ''
+
+- name: testRunner
+  type: string
+  default: ''
+  
+- name: testResultsFiles
+  type: string
+  default: '**/*.trx'
+  
+steps:
+- ${{ if parameters.logger }}:
+  - script: dotnet test ${{ parameters.dotNetTestProjectFilePath }} --logger ${{ parameters.logger }} #trx
+  - task: PublishTestResults@2
+    condition: succeededOrFailed()
+    inputs:
+      testRunner: ${{ parameters.testRunner }}
+      testResultsFiles: ${{ parameters.testResultsFiles }}
+      
+- ${{ else}}:
+  - task: DotNetCoreCLI@2
+    displayName: 'Run Unit Tests'
+    inputs:
+      command: 'test'
+      projects: '${{ parameters.dotNetTestProjectFilePath }}' 
+      arguments: '--configuration ${{ parameters.buildConfiguration }} --collect:"XPlat Code Coverage"'
+      publishTestResults: '${{ parameters.publishTestResults }}'
+      testRunTitle: '${{ parameters.testRunTitle }}'
+      workingDirectory: '${{ parameters.workingDirectory }}'
